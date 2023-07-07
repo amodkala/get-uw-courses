@@ -8,7 +8,7 @@ def get_soup(url):
     return soup
 
 def get_course_details(soup):
-    fields = ['course_id', 'course_title', 'course_description']
+    fields = ['course_title', 'course_description']
     center_tags = soup.find_all('center')
 
     course_details = {}
@@ -19,7 +19,11 @@ def get_course_details(soup):
 
             course_code_info = div_cells[0].text.strip().split()
             course_code = course_code_info[0] + course_code_info[1]
-            course = {field: ' '.join(cell.text.strip().split()) for field, cell in zip(fields, div_cells[1:])}
+
+            course_id = int(div_cells[1].text.strip().split()[-1])
+
+            course = {field: ' '.join(cell.text.strip().split()) for field, cell in zip(fields, div_cells[2:])}
+            course['course_id'] = course_id
 
             metadata_items = div_table.find_all('em')
             metadata = [' '.join(metadata.text.strip().split()) for metadata in metadata_items if metadata.text.strip() != '']

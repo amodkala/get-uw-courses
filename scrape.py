@@ -8,28 +8,31 @@ def get_soup(url):
     return soup
 
 def get_course_details(soup):
-    fields = ['course_title', 'course_description']
+    fields = ['course_code', 'course_id', 'course_title', 'course_description', 'metadata']
     center_tags = soup.find_all('center')
 
-    course_details = {}
+    course_details = []
     for center in center_tags:
         div_table = center.find('div', class_='divTable')
         if div_table is not None:
             div_cells = div_table.find_all('div', class_='divTableCell')
+            div_cells = [' '.join(cell.text.strip().split()) for cell in div_cells]
 
-            course_code_info = div_cells[0].text.strip().split()
-            course_code = course_code_info[0] + course_code_info[1]
+            course_code_info = div_cells[0].split()
+            div_cells[0] = course_code_info[0] + course_code_info[1]
 
-            course_id = int(div_cells[1].text.strip().split()[-1])
-
-            course = {field: ' '.join(cell.text.strip().split()) for field, cell in zip(fields, div_cells[2:])}
-            course['course_id'] = course_id
+            course_id = int(div_cells[1].split()[-1])
 
             metadata_items = div_table.find_all('em')
             metadata = [' '.join(metadata.text.strip().split()) for metadata in metadata_items if metadata.text.strip() != '']
-            course['metadata'] = metadata
 
-            course_details[course_code] = course
+            div_cells = div_cells[:4]
+            div_cells.append(metadata)
+
+            course = {field: cell for field, cell in zip(fields, div_cells)}
+            course['course_id'] = course_id
+
+            course_details.append(course)
 
     return course_details
 
@@ -66,7 +69,8 @@ def main():
         course_url = f'https://ucalendar.uwaterloo.ca/{year}/COURSE/course-{course_subject}.html'
         course_soup = get_soup(course_url)
         details = get_course_details(course_soup)
-        course_details.append(details)
+        for course in details:
+            course_details.append(course)
 
     with open('courses.json', 'w') as f:
         json.dump(course_details, f, indent=4)
